@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+# Two releases close together fought over the moving `latest` reference, and whichever finished
+# last won - which is not necessarily the most recent one. Now the second waits its turn.
+# `cancel-in-progress: false` on purpose: a release cancelled halfway leaves the image pushed and the
+# GitHub release not, or vice versa (CYAG-11).
+concurrency:
+  group: closeyourit-agent-release
+  cancel-in-progress: false
+  # `single`, the default, keeps ONLY ONE run pending: when a third arrives, the one that was waiting
+  # is cancelled and replaced. With the new way of working a preview ships before every production
+  # release, so tags arrive in bursts and the middle run would vanish - with no image and no release,
+  # but with the tag in place. `max` keeps up to 100 pending.
+  queue: max
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          # 8 runner condividono la cartella di mise: estrarre la cache riscrive binari in uso (ETXTBSY, CYAU-210)
+          cache: false
+      # The SAME commands as ci.yml, plus the build tag check. Before, `go vet ./...` and
+      # `go test ./...` ran here without `-tags testing`: 13 test files were not even compiled, and
+      # among them was the only test of the command answering "is the agent alive?" that feeds the
+      # Dockerfile HEALTHCHECK. Breaking that command turned every pull request red and left
+      # publishing green: the broken version shipped and reached the servers (CYAG-11).
+      # Here and not in the `docker` job: `goreleaser` runs in parallel with `docker` and would not go
+      # through that check. A tag like `v1.2.3+rc1` made the image fail and let the GitHub release go
+      # ahead, marked final to boot. Half a release done, and the wrong half.
+      - run: ./script/release-tag.sh --check
+      - run: make tags-check
+      - run: make vet
+      - run: make cover
+      - run: go build ./...
+      # The binaries go to customer servers: no release with known reachable flaws (CYRA-914 B12).
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+
+  goreleaser:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          # 8 runner condividono la cartella di mise: estrarre la cache riscrive binari in uso (ETXTBSY, CYAU-210)
+          cache: false
+      - uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Whoever installs the agent copies instructions from the app that say `:latest`. Until now
+      # every tag pushed `latest`, previews included: a never-tested version would have landed on the
+      # servers of whoever was installing at that moment. It never happened only because no preview
+      # was ever published - and with the new way of working one ships before EVERY production release.
+      #
+      # The references are computed here and not in the `tags` list with an inline condition: a false
+      # condition would leave an empty line in the list, and an empty line in that list is not one
+      # reference less, it is a parse error.
+      - name: Image references and channel
+        id: meta
+        env:
+          IMAGE: ghcr.io/bussolabs/closeyourit-agent
+        run: |
+          set -eu
+          tag="${GITHUB_REF_NAME}"
+          # The test job has already validated the tag shape; it is validated again here anyway,
+          # because this step must not depend on the job order to be safe.
+          ./script/release-tag.sh --check "$tag"
+          channel="$(./script/release-tag.sh --channel "$tag")"
+          moving="$(./script/release-tag.sh --moving "$tag")"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+          echo "moving=$moving" >> "$GITHUB_OUTPUT"
+          {
+            echo 'tags<<FINE'
+            echo "${IMAGE}:${tag}"
+            echo "${IMAGE}:${moving}"
+            echo 'FINE'
+          } >> "$GITHUB_OUTPUT"
+          echo "::notice::channel $channel — pushing ${IMAGE}:${tag} and ${IMAGE}:${moving}"
+
+      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

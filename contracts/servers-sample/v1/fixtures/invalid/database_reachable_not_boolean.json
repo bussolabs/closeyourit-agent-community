@@ -1,0 +1,46 @@
+{
+  "fingerprint": "6f1d2c3b4a5968778695a4b3c2d1e0f0a1b2c3d4e5f60718",
+  "agent_version": "0.9.3",
+  "recorded_at": "2026-09-01T10:00:00Z",
+  "host": {
+    "hostname": "ci-runner-1",
+    "reboot_required": false,
+    "updates_available": -1,
+    "security_updates_available": -1
+  },
+  "data": {
+    "stats": {
+      "cpu": 3.2,
+      "m": 3.76,
+      "mu": 0.9,
+      "mp": 23.9,
+      "mb": 0.6,
+      "d": 38.1,
+      "du": 12.4,
+      "dp": 32.55,
+      "la": [
+        0.1,
+        0.08,
+        0.05
+      ]
+    },
+    "info": {
+      "u": 3600,
+      "cpu": 3.2,
+      "mp": 23.9,
+      "dp": 32.55,
+      "v": "0.9.3",
+      "bb": 0,
+      "la": [
+        0.1,
+        0.08,
+        0.05
+      ]
+    },
+    "container": null
+  },
+  "database": {
+    "engine": "postgresql",
+    "reachable": "yes"
+  }
+}

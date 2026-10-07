@@ -1,0 +1,10 @@
+[
+  { "id": "enrollment-token", "credential": "enrollment_token", "prefix": "cyi_s_", "endpoint": "/api/v1/servers/samples", "status": 202 },
+  { "id": "host-token", "credential": "host_token", "prefix": "cyi_h_", "endpoint": "/api/v1/servers/samples", "status": 202 },
+  { "id": "no-credential", "credential": "none", "endpoint": "/api/v1/servers/samples", "status": 401, "code": "R401-SERVER-001" },
+  { "id": "enrollment-token-revoked", "credential": "enrollment_token", "prefix": "cyi_s_", "endpoint": "/api/v1/servers/samples", "status": 401, "code": "R401-SERVER-001" },
+  { "id": "project-bearer-rejected", "credential": "project_bearer", "prefix": "cyi_", "endpoint": "/api/v1/servers/samples", "status": 401, "code": "R401-SERVER-001" },
+  { "id": "host-token-revoked", "credential": "host_token", "prefix": "cyi_h_", "endpoint": "/api/v1/servers/samples", "status": 401, "code": "R401-SERVER-002" },
+  { "id": "host-token-fingerprint-mismatch", "credential": "host_token", "prefix": "cyi_h_", "body": "foreign_fingerprint", "endpoint": "/api/v1/servers/samples", "status": 403, "code": "R403-SERVER-003" },
+  { "id": "host-revoked", "credential": "enrollment_token", "prefix": "cyi_s_", "endpoint": "/api/v1/servers/samples", "status": 403, "code": "R403-SERVER-002" }
+]

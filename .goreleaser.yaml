@@ -1,0 +1,33 @@
+version: 2
+project_name: closeyourit-agent
+
+builds:
+  - main: ./cmd/closeyourit-agent
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X github.com/bussolabs/closeyourit-agent/internal/version.Version={{.Version}}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github-native
+
+release:
+  draft: false
+  # With the default, a preview becomes "Latest" on GitHub and `GET /releases/latest` returns it:
+  # whoever looks at the list of versions takes it for the good one. With `auto` the "latest
+  # version" reference stays on the last final release even if the preview ships later (CYAG-11).
+  #
+  # Mind how `auto` decides: it looks at the prerelease field of the PARSED semver, not at the mere
+  # presence of a dash. In `v1.2.3+build-5` the dash is there but sits in the build metadata, and
+  # goreleaser would publish it as final while the image channel would treat it as a preview. That
+  # is why `script/release-tag.sh` forbids build metadata altogether: it is the only way the two
+  # rules cannot diverge.
+  prerelease: auto

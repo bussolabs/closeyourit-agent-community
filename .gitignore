@@ -1,0 +1,5 @@
+/closeyourit-agent
+/dist/
+*.test
+coverage.out
+.DS_Store

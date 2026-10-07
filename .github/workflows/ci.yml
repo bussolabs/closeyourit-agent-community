@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          # 8 runners share the mise folder: extracting the cache rewrites binaries in use (ETXTBSY, CYAU-210)
+          cache: false
+      - run: make tags-check
+      - run: make vet
+      - run: make cover
+      - run: go build ./...
+      # Known flaws reachable from our code fail the build: the release binaries run on customer servers (CYRA-914 B12).
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...

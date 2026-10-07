@@ -1,0 +1,303 @@
+{
+  "fingerprint": "6f1d2c3b4a5968778695a4b3c2d1e0f0a1b2c3d4e5f60718",
+  "agent_version": "0.9.3",
+  "recorded_at": "2026-09-01T10:00:00Z",
+  "host": {
+    "hostname": "ci-runner-1",
+    "reboot_required": false,
+    "updates_available": -1,
+    "security_updates_available": -1
+  },
+  "data": {
+    "stats": {
+      "cpu": 3.2,
+      "m": 3.76,
+      "mu": 0.9,
+      "mp": 23.9,
+      "mb": 0.6,
+      "d": 38.1,
+      "du": 12.4,
+      "dp": 32.55,
+      "la": [
+        0.1,
+        0.08,
+        0.05
+      ]
+    },
+    "info": {
+      "u": 3600,
+      "cpu": 3.2,
+      "mp": 23.9,
+      "dp": 32.55,
+      "v": "0.9.3",
+      "bb": 0,
+      "la": [
+        0.1,
+        0.08,
+        0.05
+      ]
+    },
+    "container": null
+  },
+  "database": {
+    "engine": "postgresql",
+    "reachable": true,
+    "top_tables": [
+      {
+        "database": "db",
+        "name": "t0",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t1",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t2",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t3",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t4",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t5",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t6",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t7",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t8",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t9",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t10",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t11",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t12",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t13",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t14",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t15",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t16",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t17",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t18",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t19",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t20",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t21",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t22",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t23",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t24",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t25",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t26",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t27",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t28",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t29",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t30",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t31",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t32",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t33",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t34",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t35",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t36",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t37",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t38",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t39",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t40",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t41",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t42",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t43",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t44",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t45",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t46",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t47",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t48",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t49",
+        "size_bytes": 1
+      },
+      {
+        "database": "db",
+        "name": "t50",
+        "size_bytes": 1
+      }
+    ]
+  }
+}

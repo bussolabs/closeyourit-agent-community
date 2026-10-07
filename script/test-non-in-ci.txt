@@ -1,0 +1,12 @@
+# CYAG-11 — the test files that do NOT run in CI, and why.
+#
+# The CI has a single runner and it is Linux. A test file bound to another system is not compiled
+# in either run: it does not fail, it disappears. Listing it here is a decision, and
+# `script/tags-check.sh` rejects both a file missing from this list and a line of this list that is
+# no longer needed.
+#
+# Before adding one: can that code really be tested only on its own system? Often the answer is no,
+# and the test should be rewritten to run everywhere.
+
+# Reads the macOS graphics service: on Linux there is nothing to query.
+internal/agent/gpu_darwin_test.go

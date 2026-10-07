@@ -1,0 +1,16 @@
+# closeyourit-agent on a Docker host. Copy the token from the "Servers" page of your CloseYourIt.
+services:
+  closeyourit-agent:
+    image: ghcr.io/bussolabs/closeyourit-agent:latest
+    container_name: closeyourit-agent
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - closeyourit_agent_data:/var/lib/closeyourit-agent
+    environment:
+      CYI_ENDPOINT: https://closeyourit.example.com
+      CYI_TOKEN: ${CYI_SERVERS_TOKEN}
+
+volumes:
+  closeyourit_agent_data:

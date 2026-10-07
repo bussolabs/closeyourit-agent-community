@@ -1,0 +1,20 @@
+# closeyourit-agent — systemd unit for hosts without Docker.
+# Prerequisites: binary from the GitHub release in /opt/closeyourit-agent/closeyourit-agent,
+# `apt install smartmontools`, env file /etc/closeyourit-agent.env with CYI_ENDPOINT/CYI_TOKEN (chmod 600).
+[Unit]
+Description=CloseYourIt server monitoring agent
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/etc/closeyourit-agent.env
+Environment=LOG_LEVEL=info
+ExecStart=/opt/closeyourit-agent/closeyourit-agent
+Restart=on-failure
+RestartSec=5
+StateDirectory=closeyourit-agent
+
+[Install]
+WantedBy=multi-user.target

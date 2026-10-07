@@ -1,0 +1,344 @@
+{
+  "fingerprint": "6f1d2c3b4a5968778695a4b3c2d1e0f0a1b2c3d4e5f60718",
+  "agent_version": "0.9.3",
+  "recorded_at": "2026-09-01T10:00:00Z",
+  "host": {
+    "hostname": "apps-staging",
+    "kernel": "6.8.0-59-generic",
+    "cores": 4,
+    "threads": 8,
+    "cpu_model": "AMD EPYC 9454P 48-Core Processor",
+    "os_name": "Ubuntu 24.04.2 LTS",
+    "arch": "amd64",
+    "memory_total": 8127683584,
+    "reboot_required": true,
+    "updates_available": 12,
+    "security_updates_available": 3
+  },
+  "data": {
+    "stats": {
+      "cpu": 12.34,
+      "m": 7.57,
+      "mu": 3.02,
+      "mp": 39.9,
+      "mb": 2.51,
+      "mz": 0.5,
+      "s": 4.0,
+      "su": 0.25,
+      "d": 75.35,
+      "du": 41.2,
+      "dp": 54.68,
+      "it": 1000000,
+      "iu": 400000,
+      "ip": 40,
+      "dr": 1.0,
+      "dw": 2.0,
+      "ns": 0.5,
+      "nr": 1.0,
+      "t": {
+        "k10temp_tctl": 48.5,
+        "nvme_composite": 41.0
+      },
+      "efs": {
+        "sdb1": {
+          "mp": "/mnt/data",
+          "n": "data",
+          "d": 250.0,
+          "du": 100.5,
+          "it": 2000000,
+          "iu": 1500000,
+          "ip": 75,
+          "r": 0.0,
+          "w": 0.1,
+          "rb": 0,
+          "wb": 4096,
+          "dios": [
+            0.1,
+            0.4,
+            0.5,
+            0.2,
+            0.3,
+            0.5
+          ]
+        }
+      },
+      "g": {
+        "0": {
+          "n": "NVIDIA A10",
+          "mu": 2048.0,
+          "mt": 24576.0,
+          "u": 7.5,
+          "p": 61.2,
+          "e": {
+            "3d": 5.0
+          },
+          "pp": 70.0
+        }
+      },
+      "b": [
+        524288,
+        1048576
+      ],
+      "la": [
+        0.42,
+        0.38,
+        0.3
+      ],
+      "bat": [
+        98,
+        1
+      ],
+      "ni": {
+        "eth0": [
+          123456,
+          654321,
+          987654321,
+          1234567890
+        ]
+      },
+      "dio": [
+        1048576,
+        2097152
+      ],
+      "cpub": [
+        8.1,
+        3.2,
+        0.5,
+        0.1,
+        88.1
+      ],
+      "cpus": [
+        10,
+        15,
+        12,
+        11
+      ],
+      "dios": [
+        1.2,
+        3.4,
+        4.6,
+        0.8,
+        1.1,
+        4.0
+      ],
+      "proc": [
+        {
+          "p": 812,
+          "n": "postgres",
+          "c": 41.5,
+          "m": 812000000
+        },
+        {
+          "p": 33,
+          "n": "puma",
+          "c": 12.2,
+          "m": 410000000
+        },
+        {
+          "p": 9001,
+          "n": "ruby",
+          "c": 0.4,
+          "m": 950000000
+        }
+      ]
+    },
+    "info": {
+      "t": 8,
+      "u": 864000,
+      "cpu": 12.34,
+      "mp": 39.9,
+      "dp": 54.68,
+      "v": "0.9.3",
+      "g": 7.5,
+      "dt": 48.5,
+      "bb": 1572864,
+      "la": [
+        0.42,
+        0.38,
+        0.3
+      ],
+      "efs": {
+        "sdb1": 40.2
+      },
+      "sv": [
+        42,
+        1
+      ],
+      "bat": [
+        98,
+        1
+      ]
+    },
+    "container": [
+      {
+        "id": "abcdef123456",
+        "n": "closeyourit-web",
+        "c": 2.5,
+        "m": 512.25,
+        "b": [
+          10240,
+          20480
+        ],
+        "h": 2,
+        "st": "running",
+        "img": "registry.example.com/closeyourit:latest",
+        "run": true,
+        "rc": 2,
+        "sa": "2026-09-01T09:00:00Z"
+      },
+      {
+        "id": "fedcba654321",
+        "n": "kamal-proxy",
+        "c": 0.3,
+        "m": 32.5,
+        "b": [
+          512,
+          1024
+        ],
+        "h": 0,
+        "st": "running",
+        "img": "basecamp/kamal-proxy:v0.8.4",
+        "run": true
+      },
+      {
+        "id": "0123456789ab",
+        "n": "clubbel-old-web",
+        "c": 0.0,
+        "m": 0.0,
+        "h": 0,
+        "st": "exited",
+        "img": "registry.example.com/clubbel-old:latest",
+        "im": true,
+        "run": false,
+        "rc": 0,
+        "oom": false
+      }
+    ],
+    "systemd": [
+      {
+        "n": "ssh.service",
+        "s": 0,
+        "c": 0.1,
+        "m": 10485760,
+        "mp": 20971520,
+        "ss": 1,
+        "cp": 0.5
+      },
+      {
+        "n": "backup.service",
+        "s": 2,
+        "c": 0.0,
+        "m": 0,
+        "mp": 52428800,
+        "ss": 3,
+        "cp": 12.0
+      }
+    ]
+  },
+  "smart": {
+    "nvme0": {
+      "mn": "SAMSUNG MZVL2512HCJQ-00B00",
+      "sn": "S64KNX2T216015",
+      "fv": "GXA7601Q",
+      "c": 512110190592,
+      "s": "PASSED",
+      "dn": "/dev/nvme0",
+      "dt": "nvme",
+      "t": 41,
+      "a": [
+        {
+          "id": 5,
+          "n": "Reallocated_Sector_Ct",
+          "v": 100,
+          "w": 100,
+          "t": 10,
+          "rv": 0,
+          "rs": "0",
+          "wf": "-"
+        },
+        {
+          "n": "Power_On_Hours",
+          "rv": 7344,
+          "rs": "7344 (253d 8h)"
+        }
+      ]
+    },
+    "sda": {
+      "mn": "WDC WD40EFRX",
+      "sn": "WD-WCC4E1234567",
+      "c": 4000787030016,
+      "s": "FAILED",
+      "dn": "/dev/sda",
+      "dt": "sat",
+      "t": 52
+    }
+  },
+  "database": {
+    "engine": "postgresql",
+    "reachable": true,
+    "version": "16.2",
+    "role": "primary",
+    "system_identifier": "7234567890123456789",
+    "connections": {
+      "total": 42,
+      "max": 100,
+      "reserved": 5,
+      "by_state": {
+        "active": 5,
+        "idle": 30,
+        "idle_in_transaction": 7
+      }
+    },
+    "replication": {
+      "streaming": true,
+      "lag_seconds": 0.12,
+      "replicas": [
+        {
+          "client": "10.0.0.11",
+          "state": "streaming"
+        }
+      ]
+    },
+    "databases": [
+      {
+        "name": "app_production",
+        "size_bytes": 123456789
+      }
+    ],
+    "top_tables": [
+      {
+        "database": "app_production",
+        "name": "public.events",
+        "size_bytes": 98765432
+      }
+    ]
+  },
+  "journal": {
+    "entries": [
+      {
+        "c": "s=abc123;i=1a2b;b=boot0001;m=100200300;t=6551abc;x=deadbeef",
+        "t": 1788256800000000,
+        "p": 3,
+        "u": "backup",
+        "m": "Backup job failed: connection refused"
+      },
+      {
+        "c": "s=abc123;i=1a2c;b=boot0001;m=100200400;t=6551abd;x=cafebabe",
+        "t": 1788256801000000,
+        "p": 2,
+        "u": "kernel",
+        "m": "Out of memory: Killed process 4321 (backup)"
+      }
+    ],
+    "snapshots": {
+      "backup.service": {
+        "t": 1788256800,
+        "lines": [
+          "2026-09-01T10:00:00+0000 apps-staging systemd[1]: Starting backup.service...",
+          "2026-09-01T10:00:01+0000 apps-staging backup[4321]: connection refused",
+          "2026-09-01T10:00:01+0000 apps-staging systemd[1]: backup.service: Main process exited, code=exited, status=1/FAILURE"
+        ]
+      }
+    }
+  }
+}

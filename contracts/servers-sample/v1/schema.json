@@ -1,0 +1,505 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://closeyour.it/contracts/servers-sample/v1/schema.json",
+  "title": "CloseYourIt servers sample contract v1 (closeyourit-agent → POST /api/v1/servers/samples)",
+  "$ref": "#/$defs/sample",
+  "$defs": {
+    "timestamp": { "type": "string", "format": "date-time" },
+    "agent_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$" },
+    "error_code": { "type": "string", "pattern": "^R[0-9]{3}-SERVER-[0-9]{3}$" },
+    "unsigned": { "type": "integer", "minimum": 0 },
+    "percentage": { "type": "number", "minimum": 0, "maximum": 100 },
+    "pair_unsigned": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/unsigned" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "load_avg": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0 },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "disk_io_stats": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 6,
+      "maxItems": 6
+    },
+
+    "sample": {
+      "type": "object",
+      "required": ["fingerprint", "agent_version", "recorded_at", "host", "data"],
+      "properties": {
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "agent_version": { "$ref": "#/$defs/agent_version" },
+        "recorded_at": { "$ref": "#/$defs/timestamp" },
+        "host": { "$ref": "#/$defs/host" },
+        "data": { "$ref": "#/$defs/combined_data" },
+        "smart": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/smart_device" }
+        },
+        "journal": { "$ref": "#/$defs/journal" },
+        "database": { "$ref": "#/$defs/database" }
+      },
+      "additionalProperties": true
+    },
+
+    "host": {
+      "type": "object",
+      "required": ["hostname", "reboot_required", "updates_available", "security_updates_available"],
+      "properties": {
+        "hostname": { "type": "string" },
+        "kernel": { "type": "string" },
+        "cores": { "type": "integer" },
+        "threads": { "type": "integer" },
+        "cpu_model": { "type": "string" },
+        "os_name": { "type": "string" },
+        "arch": { "type": "string" },
+        "memory_total": { "$ref": "#/$defs/unsigned" },
+        "reboot_required": { "type": "boolean" },
+        "updates_available": { "type": "integer", "minimum": -1 },
+        "security_updates_available": { "type": "integer", "minimum": -1 }
+      },
+      "additionalProperties": true
+    },
+
+    "combined_data": {
+      "type": "object",
+      "required": ["stats", "info", "container"],
+      "properties": {
+        "stats": { "$ref": "#/$defs/stats" },
+        "info": { "$ref": "#/$defs/info" },
+        "container": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/container" }
+        },
+        "systemd": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/systemd_service" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "stats": {
+      "type": "object",
+      "required": ["cpu", "m", "mu", "mp", "mb", "d", "du", "dp"],
+      "properties": {
+        "cpu": { "$ref": "#/$defs/percentage" },
+        "cpum": { "type": "number" },
+        "m": { "type": "number", "minimum": 0 },
+        "mm": { "type": "number" },
+        "mu": { "type": "number", "minimum": 0 },
+        "mp": { "$ref": "#/$defs/percentage" },
+        "mb": { "type": "number", "minimum": 0 },
+        "mz": { "type": "number", "minimum": 0 },
+        "s": { "type": "number", "minimum": 0 },
+        "su": { "type": "number", "minimum": 0 },
+        "d": { "type": "number", "minimum": 0 },
+        "du": { "type": "number", "minimum": 0 },
+        "dp": { "$ref": "#/$defs/percentage" },
+        "it": { "$ref": "#/$defs/unsigned" },
+        "iu": { "$ref": "#/$defs/unsigned" },
+        "ip": { "$ref": "#/$defs/percentage" },
+        "dr": { "type": "number" },
+        "dw": { "type": "number" },
+        "drm": { "type": "number" },
+        "dwm": { "type": "number" },
+        "ns": { "type": "number" },
+        "nr": { "type": "number" },
+        "nsm": { "type": "number" },
+        "nrm": { "type": "number" },
+        "t": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "efs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/fs_stats" }
+        },
+        "g": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/gpu" }
+        },
+        "b": { "$ref": "#/$defs/pair_unsigned" },
+        "bm": { "$ref": "#/$defs/pair_unsigned" },
+        "la": { "$ref": "#/$defs/load_avg" },
+        "bat": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "ni": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/unsigned" },
+            "minItems": 4,
+            "maxItems": 4
+          }
+        },
+        "dio": { "$ref": "#/$defs/pair_unsigned" },
+        "diom": { "$ref": "#/$defs/pair_unsigned" },
+        "cpub": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 5,
+          "maxItems": 5
+        },
+        "cpus": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 }
+        },
+        "dios": { "$ref": "#/$defs/disk_io_stats" },
+        "diosm": { "$ref": "#/$defs/disk_io_stats" },
+        "proc": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/process" },
+          "maxItems": 40
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "process": {
+      "type": "object",
+      "required": ["p", "n", "c", "m"],
+      "properties": {
+        "p": { "type": "integer" },
+        "n": { "type": "string", "minLength": 1 },
+        "c": { "type": "number", "minimum": 0 },
+        "m": { "$ref": "#/$defs/unsigned" }
+      },
+      "additionalProperties": true
+    },
+
+    "gpu": {
+      "type": "object",
+      "required": ["n", "u"],
+      "properties": {
+        "n": { "type": "string" },
+        "mu": { "type": "number" },
+        "mt": { "type": "number" },
+        "u": { "type": "number" },
+        "p": { "type": "number" },
+        "e": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "pp": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+
+    "fs_stats": {
+      "type": "object",
+      "required": ["d", "du", "r", "w", "rb", "wb"],
+      "properties": {
+        "mp": { "type": "string" },
+        "n": { "type": "string" },
+        "d": { "type": "number", "minimum": 0 },
+        "du": { "type": "number", "minimum": 0 },
+        "it": { "$ref": "#/$defs/unsigned" },
+        "iu": { "$ref": "#/$defs/unsigned" },
+        "ip": { "$ref": "#/$defs/percentage" },
+        "r": { "type": "number" },
+        "w": { "type": "number" },
+        "rm": { "type": "number" },
+        "wm": { "type": "number" },
+        "rb": { "$ref": "#/$defs/unsigned" },
+        "wb": { "$ref": "#/$defs/unsigned" },
+        "rbm": { "$ref": "#/$defs/unsigned" },
+        "wbm": { "$ref": "#/$defs/unsigned" },
+        "dios": { "$ref": "#/$defs/disk_io_stats" },
+        "diosm": { "$ref": "#/$defs/disk_io_stats" }
+      },
+      "additionalProperties": true
+    },
+
+    "info": {
+      "type": "object",
+      "required": ["u", "cpu", "mp", "dp", "v", "bb"],
+      "properties": {
+        "h": { "type": "string" },
+        "k": { "type": "string" },
+        "c": { "type": "integer" },
+        "t": { "type": "integer" },
+        "m": { "type": "string" },
+        "u": { "$ref": "#/$defs/unsigned" },
+        "cpu": { "$ref": "#/$defs/percentage" },
+        "mp": { "$ref": "#/$defs/percentage" },
+        "dp": { "$ref": "#/$defs/percentage" },
+        "b": { "type": "number" },
+        "v": { "$ref": "#/$defs/agent_version" },
+        "p": { "type": "boolean" },
+        "g": { "type": "number" },
+        "dt": { "type": "number" },
+        "os": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "bb": { "$ref": "#/$defs/unsigned" },
+        "la": { "$ref": "#/$defs/load_avg" },
+        "ct": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "efs": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "sv": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 65535 },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "bat": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "container": {
+      "type": "object",
+      "required": ["n", "c", "m", "h", "st", "img", "run"],
+      "properties": {
+        "n": { "type": "string", "minLength": 1 },
+        "c": { "type": "number", "minimum": 0 },
+        "m": { "type": "number", "minimum": 0 },
+        "ns": { "type": "number" },
+        "nr": { "type": "number" },
+        "b": { "$ref": "#/$defs/pair_unsigned" },
+        "h": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "st": { "type": "string" },
+        "id": { "type": "string", "maxLength": 64 },
+        "img": { "type": "string" },
+        "im": { "type": "boolean" },
+        "run": { "type": "boolean" },
+        "rc": { "$ref": "#/$defs/unsigned" },
+        "sa": { "$ref": "#/$defs/timestamp" },
+        "oom": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "systemd_service": {
+      "type": "object",
+      "required": ["n", "s", "c", "m", "mp", "ss", "cp"],
+      "properties": {
+        "n": { "type": "string", "minLength": 1 },
+        "s": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "c": { "type": "number", "minimum": 0 },
+        "m": { "$ref": "#/$defs/unsigned" },
+        "mp": { "$ref": "#/$defs/unsigned" },
+        "ss": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "cp": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+
+    "smart_device": {
+      "type": "object",
+      "properties": {
+        "mn": { "type": "string" },
+        "sn": { "type": "string" },
+        "fv": { "type": "string" },
+        "c": { "$ref": "#/$defs/unsigned" },
+        "s": { "type": "string" },
+        "dn": { "type": "string" },
+        "dt": { "type": "string" },
+        "t": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "a": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/smart_attribute" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "smart_attribute": {
+      "type": "object",
+      "required": ["n", "rv"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "n": { "type": "string" },
+        "v": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "w": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "t": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "rv": { "$ref": "#/$defs/unsigned" },
+        "rs": { "type": "string" },
+        "wf": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "journal": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/journal_entry" },
+          "maxItems": 500
+        },
+        "snapshots": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/journal_snapshot" },
+          "propertyNames": { "minLength": 1 },
+          "maxProperties": 10
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "journal_entry": {
+      "type": "object",
+      "required": ["c", "t", "p", "m"],
+      "properties": {
+        "c": { "type": "string", "minLength": 1 },
+        "t": { "$ref": "#/$defs/unsigned" },
+        "p": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "u": { "type": "string" },
+        "m": { "type": "string", "minLength": 1, "maxLength": 1024 }
+      },
+      "additionalProperties": true
+    },
+
+    "journal_snapshot": {
+      "type": "object",
+      "required": ["t", "lines"],
+      "properties": {
+        "t": { "$ref": "#/$defs/unsigned" },
+        "lines": {
+          "type": "array",
+          "items": { "type": "string", "maxLength": 512 },
+          "maxItems": 50
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "database": {
+      "type": "object",
+      "required": ["engine", "reachable"],
+      "properties": {
+        "engine": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "reachable": { "type": "boolean" },
+        "version": { "type": "string", "maxLength": 256 },
+        "role": { "enum": ["primary", "standby"] },
+        "system_identifier": { "type": "string", "pattern": "^[0-9]{1,20}$" },
+        "connections": { "$ref": "#/$defs/database_connections" },
+        "replication": { "$ref": "#/$defs/database_replication" },
+        "databases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/database_size" },
+          "maxItems": 50
+        },
+        "top_tables": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/table_size" },
+          "maxItems": 50
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "database_connections": {
+      "type": "object",
+      "required": ["total"],
+      "properties": {
+        "total": { "$ref": "#/$defs/unsigned" },
+        "max": { "$ref": "#/$defs/unsigned" },
+        "reserved": { "$ref": "#/$defs/unsigned" },
+        "by_state": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/unsigned" },
+          "propertyNames": { "maxLength": 256 },
+          "maxProperties": 20
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "database_replication": {
+      "type": "object",
+      "required": ["streaming"],
+      "properties": {
+        "streaming": { "type": "boolean" },
+        "lag_seconds": { "type": "number", "minimum": 0 },
+        "replicas": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/database_replica" },
+          "maxItems": 20
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "database_replica": {
+      "type": "object",
+      "properties": {
+        "client": { "type": "string", "maxLength": 256 },
+        "state": { "type": "string", "maxLength": 256 }
+      },
+      "additionalProperties": true
+    },
+
+    "database_size": {
+      "type": "object",
+      "required": ["name", "size_bytes"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "size_bytes": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+
+    "table_size": {
+      "type": "object",
+      "required": ["database", "name", "size_bytes"],
+      "properties": {
+        "database": { "type": "string", "maxLength": 256 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "size_bytes": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+
+    "sample_response": {
+      "type": "object",
+      "required": ["data"],
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": ["accepted", "host_id"],
+          "properties": {
+            "accepted": { "const": true },
+            "host_id": { "type": "string", "format": "uuid" },
+            "host_token": { "type": "string", "pattern": "^cyi_h_" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "error_envelope": {
+      "type": "object",
+      "required": ["error"],
+      "properties": {
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "$ref": "#/$defs/error_code" },
+            "message": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

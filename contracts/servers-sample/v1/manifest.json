@@ -1,0 +1,32 @@
+{
+  "contract": "closeyourit-servers-sample",
+  "version": 1,
+  "schema": "schema.json",
+  "fixtures": [
+    { "path": "fixtures/valid/minimal.json", "definition": "sample", "valid": true },
+    { "path": "fixtures/valid/complete.json", "definition": "sample", "valid": true },
+    { "path": "fixtures/valid/database_unreachable.json", "definition": "sample", "valid": true },
+    { "path": "fixtures/valid/limits.json", "definition": "sample", "valid": true },
+    { "path": "fixtures/valid/response_accepted.json", "definition": "sample_response", "valid": true },
+    { "path": "fixtures/valid/response_accepted_with_host_token.json", "definition": "sample_response", "valid": true },
+    { "path": "fixtures/valid/response_revoked.json", "definition": "error_envelope", "valid": true },
+    { "path": "fixtures/invalid/missing_fingerprint.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/blank_fingerprint.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/host_without_update_counters.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/data_without_container_key.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/wrong_types.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/agent_version_with_v_prefix.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/processes_over_limit.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/journal_snapshots_over_limit.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/journal_snapshot_lines_over_limit.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/journal_priority_out_of_range.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/container_health_out_of_range.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/systemd_state_out_of_range.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/database_role_unknown.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/database_system_identifier_not_numeric.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/database_top_tables_over_limit.json", "definition": "sample", "valid": false },
+    { "path": "fixtures/invalid/database_reachable_not_boolean.json", "definition": "sample", "valid": false }
+  ],
+  "http_cases": "fixtures/http/cases.json",
+  "auth_cases": "fixtures/http/auth-cases.json"
+}
