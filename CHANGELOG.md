@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.11.3] - 2026-10-21
+
+### Fixed
+
+- **L'agente si scarica senza accesso ai nostri sistemi.** Ogni versione esce anche sulla copia pubblica su GitHub, con i file per Linux e l'immagine Docker. Aggiornati anche gli strumenti di base, che avevano falle note. (CYAG-24)
+
 ## [0.11.2] - 2026-10-07
 
 ### Fixed
