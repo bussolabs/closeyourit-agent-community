@@ -3,3 +3,10 @@
 *.test
 coverage.out
 .DS_Store
+
+# Secrets: environment files and private keys never go in git.
+.env
+.env.*
+!.env.example
+*.pem
+*.key

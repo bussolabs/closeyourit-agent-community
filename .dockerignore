@@ -1,0 +1,5 @@
+# Secrets never enter the build context.
+.env
+.env.*
+*.pem
+*.key

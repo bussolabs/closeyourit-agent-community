@@ -72,7 +72,27 @@ func (c *Client) Complete(id string, result Result) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("complete: HTTP %d", resp.StatusCode)
+		return &HTTPError{Op: "complete", StatusCode: resp.StatusCode}
 	}
 	return nil
+}
+
+// HTTPError is a server answer outside 2xx. It keeps the status code so the caller can tell a
+// transient failure (worth retrying) from a permanent rejection (see Permanent).
+type HTTPError struct {
+	Op         string
+	StatusCode int
+}
+
+func (e *HTTPError) Error() string { return fmt.Sprintf("%s: HTTP %d", e.Op, e.StatusCode) }
+
+// Permanent reports whether the server refused the request for good: a 4xx other than an
+// expired credential (401, recoverable after re-registration), a timeout (408) or a rate
+// limit (429). Retrying a permanent rejection would only repeat it forever.
+func (e *HTTPError) Permanent() bool {
+	switch e.StatusCode {
+	case http.StatusUnauthorized, http.StatusRequestTimeout, http.StatusTooManyRequests:
+		return false
+	}
+	return e.StatusCode >= 400 && e.StatusCode < 500
 }

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.11.4] - 2026-11-11
+
+### Fixed
+
+- **Un'azione dal pannello non parte mai due volte.** Se l'agente si ferma a metà di un aggiornamento o di un riavvio, alla ripartenza non lo ripete: il pannello lo mostra come non riuscito, con un messaggio che dice che è stato interrotto. (CYAG-26)
+
 ## [0.11.3] - 2026-10-21
 
 ### Fixed

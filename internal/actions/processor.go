@@ -1,6 +1,9 @@
 package actions
 
-import "log/slog"
+import (
+	"errors"
+	"log/slog"
+)
 
 // TokenLoader provides the per-host credential persisted on disk. The Processor reloads it
 // on every Tick: this way the action goroutine shares no mutable state with the push loop,
@@ -65,11 +68,21 @@ func (p Processor) Tick() {
 		return // no queued action
 	}
 
+	// The start note is persisted before running: if the agent stops mid-command (rollout,
+	// reboot, crash) the next Tick finds it and reports the action as interrupted instead of
+	// running it again. Without the note the command does not start: the server puts the
+	// claimed action back in the queue on its own.
+	if err := p.pending.Save(Pending{ActionID: claimed.ID, Kind: claimed.Kind, Started: true}); err != nil {
+		slog.Error("Persisting the action start note failed: action not run", "id", claimed.ID, "kind", claimed.Kind, "err", err)
+		return
+	}
+
 	slog.Info("Running action", "id", claimed.ID, "kind", claimed.Kind)
 	result := p.executor.Execute(*claimed)
-	// The result is persisted before reporting it: if the report fails (network down,
-	// restart) the next Tick resends it from flushPending — the result arrives anyway.
-	if err := p.pending.Save(Pending{ActionID: claimed.ID, Result: result}); err != nil {
+	// The result replaces the start note and is persisted before reporting it: if the report
+	// fails (network down, restart) the next Tick resends it from flushPending — the result
+	// arrives anyway.
+	if err := p.pending.Save(Pending{ActionID: claimed.ID, Kind: claimed.Kind, Result: result}); err != nil {
 		slog.Error("Persisting the action result failed", "id", claimed.ID, "err", err)
 		return
 	}
@@ -82,8 +95,10 @@ func (p Processor) Tick() {
 	}
 }
 
-// flushPending resends the result left pending by the previous round. It returns false
-// if something goes wrong: in that case the Tick stops and retries on the next round.
+// flushPending resends the result left pending by the previous round. A start note with no
+// result means the agent stopped while the command ran: the action is reported as failed and
+// interrupted, never run again. It returns false if something goes wrong: in that case the
+// Tick stops before claiming and retries on the next round.
 func (p Processor) flushPending(client ActionClient) bool {
 	pending, err := p.pending.Load()
 	if err != nil {
@@ -93,13 +108,44 @@ func (p Processor) flushPending(client ActionClient) bool {
 	if pending == nil {
 		return true
 	}
-	if err := client.Complete(pending.ActionID, pending.Result); err != nil {
-		slog.Warn("Resending the action result failed", "id", pending.ActionID, "err", err)
-		return false
+	result := pending.Result
+	if pending.Started {
+		slog.Warn("Action interrupted before its result was recorded: reporting it as failed", "id", pending.ActionID, "kind", pending.Kind)
+		result = interruptedResult(pending.Kind)
+	}
+	if err := client.Complete(pending.ActionID, result); err != nil {
+		var httpErr *HTTPError
+		if !errors.As(err, &httpErr) || !httpErr.Permanent() {
+			slog.Warn("Resending the action result failed", "id", pending.ActionID, "err", err)
+			return false
+		}
+		// The server refused the result for good (e.g. action expired or unknown): retrying
+		// would block the action loop forever. The action is still not run again.
+		slog.Error("Server rejected the action result: dropping it", "id", pending.ActionID, "err", err)
 	}
 	if err := p.pending.Clear(); err != nil {
 		slog.Error("Clearing the action outbox failed", "err", err)
 		return false
 	}
 	return true
+}
+
+// interruptedMessage is the error shown on the panel for an action the agent started but
+// could not finish recording. The panel has no "interrupted" state: the action shows up as
+// failed, and the message says what really happened.
+const interruptedMessage = "interrupted: the agent stopped before recording the result of this action " +
+	"(agent restart, update or server reboot). The action was not run again: it may have completed, " +
+	"partially or fully — check the server by hand."
+
+// interruptedRebootMessage is used for a reboot, which stops the agent by design before it
+// can record the result: the server most likely rebooted anyway.
+const interruptedRebootMessage = "interrupted: the agent stopped before recording the result of the reboot. " +
+	"The server may have rebooted anyway; the reboot was not repeated."
+
+func interruptedResult(kind string) Result {
+	message := interruptedMessage
+	if kind == "reboot" {
+		message = interruptedRebootMessage
+	}
+	return Result{Status: "failed", ExitCode: -1, Error: message}
 }

@@ -19,6 +19,8 @@ func (f *fakeFailedUnits) failedUnits() []failedUnit { return f.units }
 
 // writeFakeJournalctl creates a script that prints `output` ignoring the arguments: it replaces the
 // real journalctl binary in tests (collectStream/captureUnit run it via exec).
+// The fake scripts `exec cat` so the killed process IS the one holding the pipes: with a plain `cat`
+// child, the HEAD-mode kill hits only the shell, cat keeps stderr open and cmd.Wait() hangs forever.
 func writeFakeJournalctl(t *testing.T, output string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -27,7 +29,7 @@ func writeFakeJournalctl(t *testing.T, output string) string {
 		t.Fatal(err)
 	}
 	script := filepath.Join(dir, "journalctl")
-	if err := os.WriteFile(script, []byte("#!/bin/sh\ncat "+outFile+"\n"), 0o755); err != nil {
+	if err := os.WriteFile(script, []byte("#!/bin/sh\nexec cat "+outFile+"\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	return script
@@ -56,7 +58,7 @@ func writeSystemd255Journalctl(t *testing.T, output string) string {
 		"  echo 'Please specify only one of --since=, --cursor=, and --after-cursor=.' >&2\n" +
 		"  exit 1\n" +
 		"fi\n" +
-		"cat \"" + outFile + "\"\n"
+		"exec cat \"" + outFile + "\"\n"
 	path := filepath.Join(dir, "journalctl")
 	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
@@ -95,7 +97,7 @@ func writeCursorRotatedJournalctl(t *testing.T, output string) string {
 		"      exit 1 ;;\n" +
 		"  esac\n" +
 		"done\n" +
-		"cat \"" + outFile + "\"\n"
+		"exec cat \"" + outFile + "\"\n"
 	path := filepath.Join(dir, "journalctl")
 	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
