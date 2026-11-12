@@ -1,9 +1,6 @@
 package actions
 
-import (
-	"errors"
-	"log/slog"
-)
+import "log/slog"
 
 // TokenLoader provides the per-host credential persisted on disk. The Processor reloads it
 // on every Tick: this way the action goroutine shares no mutable state with the push loop,
@@ -87,8 +84,13 @@ func (p Processor) Tick() {
 		return
 	}
 	if err := client.Complete(claimed.ID, result); err != nil {
-		slog.Error("Action report failed", "id", claimed.ID, "err", err)
-		return
+		if !rejectedForGood(err) {
+			slog.Error("Action report failed", "id", claimed.ID, "err", err)
+			return
+		}
+		// The server refused the result for good: keeping it would only stall the next round
+		// on a resend that can never succeed.
+		slog.Error("Server rejected the action result: dropping it", "id", claimed.ID, "kind", claimed.Kind, "status", result.Status, "err", err)
 	}
 	if err := p.pending.Clear(); err != nil {
 		slog.Error("Clearing the action outbox failed", "id", claimed.ID, "err", err)
@@ -114,14 +116,13 @@ func (p Processor) flushPending(client ActionClient) bool {
 		result = interruptedResult(pending.Kind)
 	}
 	if err := client.Complete(pending.ActionID, result); err != nil {
-		var httpErr *HTTPError
-		if !errors.As(err, &httpErr) || !httpErr.Permanent() {
+		if !rejectedForGood(err) {
 			slog.Warn("Resending the action result failed", "id", pending.ActionID, "err", err)
 			return false
 		}
-		// The server refused the result for good (e.g. action expired or unknown): retrying
-		// would block the action loop forever. The action is still not run again.
-		slog.Error("Server rejected the action result: dropping it", "id", pending.ActionID, "err", err)
+		// The server refused the result for good (unknown or gone action, transition not
+		// allowed): retrying would block the action loop forever. The action is still not run again.
+		slog.Error("Server rejected the action result: dropping it", "id", pending.ActionID, "kind", pending.Kind, "status", result.Status, "err", err)
 	}
 	if err := p.pending.Clear(); err != nil {
 		slog.Error("Clearing the action outbox failed", "err", err)

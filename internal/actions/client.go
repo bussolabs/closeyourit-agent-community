@@ -3,6 +3,7 @@ package actions
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -86,13 +87,23 @@ type HTTPError struct {
 
 func (e *HTTPError) Error() string { return fmt.Sprintf("%s: HTTP %d", e.Op, e.StatusCode) }
 
-// Permanent reports whether the server refused the request for good: a 4xx other than an
-// expired credential (401, recoverable after re-registration), a timeout (408) or a rate
-// limit (429). Retrying a permanent rejection would only repeat it forever.
+// Permanent reports whether the server refused the result for good, with one of the three
+// answers that never change on retry: unknown action (404, e.g. the host was removed and added
+// again to the panel), action gone (410) and state transition not allowed (422). Every other
+// answer — expired credential (401, reloaded on every round), rate limit, server error,
+// malformed request — stays transient: dropping a result on a transient failure would leave
+// the panel without knowing how the action went.
 func (e *HTTPError) Permanent() bool {
 	switch e.StatusCode {
-	case http.StatusUnauthorized, http.StatusRequestTimeout, http.StatusTooManyRequests:
-		return false
+	case http.StatusNotFound, http.StatusGone, http.StatusUnprocessableEntity:
+		return true
 	}
-	return e.StatusCode >= 400 && e.StatusCode < 500
+	return false
+}
+
+// rejectedForGood reports whether err is a permanent rejection from the server (see Permanent).
+// Network errors and transient HTTP answers are not: the result is kept and retried.
+func rejectedForGood(err error) bool {
+	var httpErr *HTTPError
+	return errors.As(err, &httpErr) && httpErr.Permanent()
 }

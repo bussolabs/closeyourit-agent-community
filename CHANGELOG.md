@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.11.5] - 2026-11-11
+
+### Fixed
+
+- **Un esito rifiutato dal pannello non blocca più le azioni nuove.** Se il pannello non potrà mai accettare l'esito di un'azione (per esempio dopo aver tolto e riaggiunto il server), l'agente lo abbandona, lo segnala come errore nei registri e riprende a eseguire le richieste nuove senza interventi a mano. Rete assente, errori del pannello o credenziale non valida restano problemi passeggeri: l'esito resta salvato e viene ritentato. (CYAG-27)
+- **Strumenti di base aggiornati.** Go passa alla 1.26.11, che chiude una falla nota nella gestione delle richieste HTTP. (CYAG-27)
+
 ## [0.11.4] - 2026-11-11
 
 ### Fixed
