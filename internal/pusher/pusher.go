@@ -9,8 +9,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"math/rand/v2"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bussolabs/closeyourit-agent/internal/entities/database"
@@ -30,6 +33,26 @@ var ErrRevoked = errors.New("host revoked (403)")
 // telling them apart the agent stayed on the dead token and the host went silent until someone
 // logged in to delete credentials.json by hand (CYAG-19).
 var ErrHostCredentialRejected = errors.New("per-host credential rejected (401 R401-SERVER-002)")
+
+// ErrRateLimited signals 429: the server asks the agent to slow down. It is never retried within
+// the tick — retrying a few seconds later is exactly the hammering the server is pushing back on.
+// The wait the server asked for, if any, travels in RateLimitedError.
+var ErrRateLimited = errors.New("rate limited by the server (429)")
+
+// RateLimitedError carries the wait read from Retry-After. RetryAfter is zero when the server did
+// not say how long (or said it in a form that cannot be read): the next tick simply tries again.
+type RateLimitedError struct {
+	RetryAfter time.Duration
+}
+
+func (e *RateLimitedError) Error() string {
+	if e.RetryAfter <= 0 {
+		return ErrRateLimited.Error()
+	}
+	return fmt.Sprintf("%s: retry after %s", ErrRateLimited, e.RetryAfter)
+}
+
+func (e *RateLimitedError) Is(target error) bool { return target == ErrRateLimited }
 
 // hostCredentialRejectedCode is the code closeyourit-rails uses for "present yourself again with
 // the enrollment token" (servers-sample v1 contract, fixtures/http/auth-cases.json).
@@ -111,7 +134,8 @@ func New(endpoint, token string) *Pusher {
 }
 
 // Push sends the payload with 2 retries (backoff with jitter) within the current tick; remaining
-// errors are handled by the caller (the next tick retries anyway).
+// errors are handled by the caller (the next tick retries anyway). A revocation (403) and a rate
+// limit (429) are not retried: both ask the agent to back off, not to try again right away.
 func (p *Pusher) Push(payload *Payload) error {
 	var lastErr error
 	for attempt := 0; attempt <= 2; attempt++ {
@@ -120,7 +144,7 @@ func (p *Pusher) Push(payload *Payload) error {
 			time.Sleep(backoff)
 		}
 		lastErr = p.send(payload)
-		if lastErr == nil || errors.Is(lastErr, ErrRevoked) {
+		if lastErr == nil || errors.Is(lastErr, ErrRevoked) || errors.Is(lastErr, ErrRateLimited) {
 			return lastErr
 		}
 	}
@@ -151,6 +175,8 @@ func (p *Pusher) send(payload *Payload) error {
 	switch {
 	case resp.StatusCode == http.StatusForbidden:
 		return ErrRevoked
+	case resp.StatusCode == http.StatusTooManyRequests:
+		return &RateLimitedError{RetryAfter: retryAfter(resp.Header.Get("Retry-After"), time.Now())}
 	case resp.StatusCode == http.StatusUnauthorized:
 		if errorCode(resp.Body) == hostCredentialRejectedCode {
 			return ErrHostCredentialRejected
@@ -169,6 +195,28 @@ func (p *Pusher) send(payload *Payload) error {
 	default:
 		return pushError(resp.StatusCode, errorCode(resp.Body))
 	}
+}
+
+// retryAfter reads the Retry-After header in both forms HTTP allows: a delay in seconds or an HTTP
+// date. Missing, unreadable or already past values give zero (no wait asked for).
+func retryAfter(header string, now time.Time) time.Duration {
+	header = strings.TrimSpace(header)
+	if header == "" {
+		return 0
+	}
+	if seconds, err := strconv.ParseInt(header, 10, 64); err == nil {
+		if seconds <= 0 {
+			return 0
+		}
+		if seconds > int64(math.MaxInt64/time.Second) {
+			return math.MaxInt64
+		}
+		return time.Duration(seconds) * time.Second
+	}
+	if at, err := http.ParseTime(header); err == nil && at.After(now) {
+		return at.Sub(now)
+	}
+	return 0
 }
 
 // pushError carries the server code in the message when there is one: in the host logs "HTTP 413"

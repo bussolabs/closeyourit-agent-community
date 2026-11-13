@@ -136,6 +136,80 @@ func TestPushGivesUpAfterRetries(t *testing.T) {
 	}
 }
 
+// CYAG-28: a 429 asks the agent to slow down. Before, it was retried twice within a few seconds,
+// the very burst the server was pushing back on. Now one attempt, and the asked wait is returned.
+func TestPush429StopsAtTheFirstAttemptAndReturnsTheWait(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.Header().Set("Retry-After", "30")
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer server.Close()
+
+	err := New(server.URL, "tok").Push(minimalPayload())
+
+	var rateLimited *RateLimitedError
+	if !errors.As(err, &rateLimited) || !errors.Is(err, ErrRateLimited) {
+		t.Fatalf("expected a RateLimitedError, got %v", err)
+	}
+	if rateLimited.RetryAfter != 30*time.Second {
+		t.Errorf("retry after = %v, expected 30s", rateLimited.RetryAfter)
+	}
+	if calls.Load() != 1 {
+		t.Errorf("a 429 must not be retried within the tick: %d calls", calls.Load())
+	}
+}
+
+// A 429 without Retry-After (e.g. an error page from a proxy) is still a rate limit: one attempt,
+// no wait, the next tick tries again.
+func TestPush429WithoutRetryAfterStopsWithoutWait(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = w.Write([]byte("<html>Too Many Requests</html>"))
+	}))
+	defer server.Close()
+
+	err := New(server.URL, "tok").Push(minimalPayload())
+
+	var rateLimited *RateLimitedError
+	if !errors.As(err, &rateLimited) {
+		t.Fatalf("expected a RateLimitedError, got %v", err)
+	}
+	if rateLimited.RetryAfter != 0 {
+		t.Errorf("retry after = %v, expected no wait", rateLimited.RetryAfter)
+	}
+	if calls.Load() != 1 {
+		t.Errorf("a 429 must not be retried within the tick: %d calls", calls.Load())
+	}
+}
+
+func TestRetryAfterReadsSecondsAndHTTPDates(t *testing.T) {
+	now := time.Date(2026, 11, 13, 10, 0, 0, 0, time.UTC)
+	cases := []struct {
+		header string
+		want   time.Duration
+	}{
+		{"", 0},
+		{"30", 30 * time.Second},
+		{" 86400 ", 24 * time.Hour},
+		{"0", 0},
+		{"-5", 0},
+		{"soon", 0},
+		{"99999999999999999", time.Duration(1<<63 - 1)},
+		{now.Add(2 * time.Minute).Format(http.TimeFormat), 2 * time.Minute},
+		{now.Add(-time.Minute).Format(http.TimeFormat), 0},
+	}
+	for _, tc := range cases {
+		if got := retryAfter(tc.header, now); got != tc.want {
+			t.Errorf("retryAfter(%q) = %v, expected %v", tc.header, got, tc.want)
+		}
+	}
+}
+
 // CYAG-19: a 401 R401-SERVER-002 says "the per-machine credential is no longer valid, present
 // yourself again with the enrollment token". Before, the agent read it as a generic error, stayed on
 // the dead token and the host went silent forever: the only recovery was deleting credentials.json

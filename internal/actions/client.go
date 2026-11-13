@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -32,6 +33,10 @@ type Client struct {
 // running the action has its own timeout (see Executor), not this client.
 const actionClientTimeout = 15 * time.Second
 
+// maxClaimResponseBytes caps how much of a claim answer is read, like the push does: an action is a
+// few hundred bytes, so a bigger answer is broken and must not grow the agent's memory.
+const maxClaimResponseBytes = 64 * 1024
+
 func NewClient(endpoint, token string) *Client {
 	return &Client{endpoint: endpoint, token: token, http: &http.Client{Timeout: actionClientTimeout}}
 }
@@ -53,7 +58,7 @@ func (c *Client) Claim() (*Action, error) {
 	var envelope struct {
 		Data Action `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxClaimResponseBytes)).Decode(&envelope); err != nil {
 		return nil, err
 	}
 	return &envelope.Data, nil

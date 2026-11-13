@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-13
+
+### Fixed
+
+- **L'agente rallenta quando CloseYourIt glielo chiede.** Non riprova più subito tre volte: aspetta il tempo indicato dal servizio, al massimo 15 minuti, e se il tempo non è indicato riprova al giro successivo. (CYAG-28)
+- **Dopo un riavvio di tutta la flotta i server non inviano più nello stesso istante.** Il primo invio resta immediato; quelli regolari partono in un momento casuale del minuto. (CYAG-28)
+- **Una risposta enorme alla richiesta di azioni non fa più crescere la memoria.** L'agente ne legge al massimo 64 KB, come già fa per gli invii dei dati. (CYAG-28)
+
 ## [0.11.5] - 2026-11-11
 
 ### Fixed

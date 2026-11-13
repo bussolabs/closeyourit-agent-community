@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand/v2"
 	"os"
 	"time"
 
@@ -20,6 +21,45 @@ import (
 
 // After a 403 (host revoked) the agent does not hammer: it retries every 15 minutes (revocation is reversible).
 const revokedIdle = 15 * time.Minute
+
+// rateLimitPause is how long the push stays quiet after a 429. It honours the server's Retry-After
+// but never beyond revokedIdle: an absurd value (a day, a year) must not silence the host for good.
+// Zero means the server did not say how long: the next tick tries again.
+func rateLimitPause(retryAfter time.Duration) time.Duration {
+	return min(max(retryAfter, 0), revokedIdle)
+}
+
+// backOff handles the push errors that ask the agent to slow down: a revocation (403) holds the push
+// loop for revokedIdle, a rate limit (429) for the wait the server asked for (see rateLimitPause).
+// It reports whether err was one of them; any other error is left to the caller.
+func backOff(err error) bool {
+	if errors.Is(err, pusher.ErrRevoked) {
+		slog.Warn("Host revoked by the server: long idle", "retry_in", revokedIdle)
+		time.Sleep(revokedIdle)
+		return true
+	}
+	var rateLimited *pusher.RateLimitedError
+	if errors.As(err, &rateLimited) {
+		pause := rateLimitPause(rateLimited.RetryAfter)
+		if pause == 0 {
+			slog.Warn("Rate limited by the server: retrying on the next tick")
+			return true
+		}
+		slog.Warn("Rate limited by the server: pausing the push", "retry_in", pause)
+		time.Sleep(pause)
+		return true
+	}
+	return false
+}
+
+// startupJitter is the random delay, within one interval, before the regular push cadence starts.
+// Without it, after a fleet-wide restart every host pushes on the same second of every minute.
+func startupJitter(interval time.Duration) time.Duration {
+	if interval <= 0 {
+		return 0
+	}
+	return rand.N(interval)
+}
 
 func main() {
 	if len(os.Args) > 1 {
@@ -89,9 +129,7 @@ func main() {
 			Database:     agent.DatabaseReport(),
 		}
 		if err := push.Push(payload); err != nil {
-			if errors.Is(err, pusher.ErrRevoked) {
-				slog.Warn("Host revoked by the server: long idle", "retry_in", revokedIdle)
-				time.Sleep(revokedIdle)
+			if backOff(err) {
 				return
 			}
 			if errors.Is(err, pusher.ErrHostCredentialRejected) {
@@ -127,7 +165,7 @@ func main() {
 	processor := serveractions.NewProcessor(cfg.Endpoint, credentialStore, executor, pendingStore)
 
 	run() // first immediate push (self-registration)
-	supervise(make(chan struct{}), cfg.Interval, run, processor.Tick)
+	supervise(make(chan struct{}), cfg.Interval, startupJitter(cfg.Interval), run, processor.Tick)
 }
 
 // credentialResetter and bearerSetter are the only two capabilities re-enrollment uses: this way
@@ -166,10 +204,28 @@ func loopUntil(stop <-chan struct{}, interval time.Duration, fn func()) {
 // dedicated goroutine. The two tickers are independent: a long action does not delay the push.
 // The action loop runs a first round right away (the caller already did the immediate push with
 // run()), so the outbox and any queued actions do not wait a whole interval at startup.
-func supervise(stop <-chan struct{}, interval time.Duration, pushTick, actionTick func()) {
+// The push cadence starts after jitter (see startupJitter) with one push: the hosts of a fleet
+// restarted together spread over the interval, and no gap between two pushes exceeds an interval.
+func supervise(stop <-chan struct{}, interval, jitter time.Duration, pushTick, actionTick func()) {
 	go func() {
 		actionTick()
 		loopUntil(stop, interval, actionTick)
 	}()
+	if !waitUntil(stop, jitter) {
+		return
+	}
+	pushTick()
 	loopUntil(stop, interval, pushTick)
+}
+
+// waitUntil waits for d and reports true, or returns false as soon as stop is closed.
+func waitUntil(stop <-chan struct{}, d time.Duration) bool {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-stop:
+		return false
+	case <-timer.C:
+		return true
+	}
 }

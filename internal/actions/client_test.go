@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -84,6 +85,41 @@ func TestCompleteAcceptedResult(t *testing.T) {
 
 	if err := NewClient(srv.URL, "cyi_h_token").Complete("act_1", Result{Status: "succeeded"}); err != nil {
 		t.Fatalf("accepted result reported as an error: %v", err)
+	}
+}
+
+// CYAG-28: the claim answer was read without a limit, so a huge answer grew the agent's memory.
+// It is now read up to 64 KiB, like the push: past that the claim fails instead of buffering it.
+func TestClaimReadsAtMost64KiB(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"pad":"`))
+		chunk := []byte(strings.Repeat("x", 1024))
+		for range 1024 { // 1 MiB of padding before the action
+			if _, err := w.Write(chunk); err != nil {
+				return
+			}
+		}
+		_, _ = w.Write([]byte(`","data":{"id":"act_1","kind":"reboot"}}`))
+	}))
+	defer srv.Close()
+
+	action, err := NewClient(srv.URL, "cyi_h_token").Claim()
+	if err == nil {
+		t.Fatalf("a claim answer over 64 KiB must be refused, got %+v", action)
+	}
+}
+
+// A normal claim answer still decodes within the limit.
+func TestClaimDecodesAnAction(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data":{"id":"act_1","kind":"reboot"}}`))
+	}))
+	defer srv.Close()
+
+	action, err := NewClient(srv.URL, "cyi_h_token").Claim()
+	if err != nil || action == nil || action.ID != "act_1" || action.Kind != "reboot" {
+		t.Fatalf("claim = %+v, %v", action, err)
 	}
 }
 
